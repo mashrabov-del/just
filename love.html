@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faqat Sening Uchun...</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            background: linear-gradient(135deg, #1f010b, #3d001a, #120006);
+            background-size: 400% 400%;
+            animation: gradientBG 12s ease infinite;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            cursor: pointer;
+            transition: background 1.2s ease;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        #message {
+            position: absolute;
+            font-size: 5vw;
+            font-weight: bold;
+            color: #ffe6f0;
+            font-family: 'Georgia', serif;
+            letter-spacing: 4px;
+            text-shadow: 0 0 30px rgba(255, 0, 100, 0.9), 0 0 60px rgba(255, 50, 120, 0.6);
+            opacity: 0;
+            transform: scale(0.3);
+            transition: all 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: none;
+            text-align: center;
+            z-index: 10;
+        }
+
+        canvas {
+            display: block;
+            position: absolute;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="message">I LOVE YOU</div>
+    <canvas id="canvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const message = document.getElementById('message');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // Uchib yuruvchi fon zarrachalari (yulduzchalar)
+        const particles = [];
+        for (let i = 0; i < 70; i++) {
+            particles.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                size: Math.random() * 2 + 1,
+                speedY: Math.random() * 0.5 - 0.25,
+                speedX: Math.random() * 0.5 - 0.25,
+                alpha: Math.random()
+            });
+        }
+
+        // Yurak chizig'i nuqtalari
+        const points = [];
+        const totalPoints = 400;
+        for (let i = 0; i <= totalPoints; i++) {
+            const t = (i / totalPoints) * Math.PI * 2;
+            const x = 16 * Math.pow(Math.sin(t), 3);
+            const y = -(13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t));
+            points.push({ x: x * 19, y: y * 19 });
+        }
+
+        let currentPointIndex = 0;
+        let isStarted = false;
+        let isCompleted = false;
+
+        // 2 soniya kutingach boshlanadi
+        setTimeout(() => {
+            isStarted = true;
+        }, 2000);
+
+        function drawBackgroundParticles() {
+            particles.forEach(p => {
+                ctx.fillStyle = `rgba(255, 182, 193, ${p.alpha})`;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+
+                p.y += p.speedY;
+                p.x += p.speedX;
+
+                if (p.y < 0) p.y = canvas.height;
+                if (p.y > canvas.height) p.y = 0;
+                if (p.x < 0) p.x = canvas.width;
+                if (p.x > canvas.width) p.x = 0;
+            });
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Fon zarrachalarini chizish
+            drawBackgroundParticles();
+
+            ctx.save();
+            ctx.translate(canvas.width / 2, canvas.height / 2);
+
+            if (isStarted && !isCompleted) {
+                if (currentPointIndex < points.length) {
+                    currentPointIndex += 3.5; // Chizilish tezligi (soat mili bo'ylab silliq)
+                } else {
+                    isCompleted = true;
+                }
+            }
+
+            if (currentPointIndex > 0 || isCompleted) {
+                const limit = isCompleted ? points.length : Math.min(currentPointIndex, points.length);
+                
+                ctx.beginPath();
+                ctx.moveTo(points[0].x, points[0].y);
+                for (let i = 1; i < limit; i++) {
+                    ctx.lineTo(points[i].x, points[i].y);
+                }
+
+                if (isCompleted) {
+                    ctx.closePath();
+                    // Ichini iliq nurli qizil rang bilan to'ldirish
+                    let gradient = ctx.createRadialGradient(0, 0, 10, 0, 0, 150);
+                    gradient.addColorStop(0, '#ff4d79');
+                    gradient.addColorStop(1, '#b3003b');
+                    ctx.fillStyle = gradient;
+                    ctx.shadowColor = '#ff3366';
+                    ctx.shadowBlur = 25;
+                    ctx.fill();
+                }
+
+                // Kontur chizig'i
+                ctx.strokeStyle = '#ff80aa';
+                ctx.lineWidth = 3;
+                ctx.lineCap = 'round';
+                ctx.stroke();
+            }
+
+            ctx.restore();
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+
+        // Bosganda ishlaydigan sehrli effekt
+        let clicked = false;
+        window.addEventListener('click', () => {
+            if (!clicked) {
+                clicked = true;
+                document.body.style.background = "linear-gradient(135deg, #2b000b, #590022)";
+                
+                canvas.style.transition = "opacity 0.8s ease, transform 0.8s ease";
+                canvas.style.opacity = "0";
+                canvas.style.transform = "scale(1.2)";
+
+                setTimeout(() => {
+                    canvas.style.display = 'none';
+                    message.style.opacity = "1";
+                    message.style.transform = "scale(1)";
+                }, 500);
+            }
+        });
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+    </script>
+
+</body>
+</html>
